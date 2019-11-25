@@ -1,20 +1,20 @@
-const  Post  = require('../models/posts')
+const Post = require('../models/posts')
 const User = require('../models/users');
 const jwt = require('jsonwebtoken');
 var dotenv = require('dotenv').config();
 
 
 /* AUTHORIZED USER CAN CREATE BLOG POSTS */
-const  createPost = (req, res,  next) => {
-    const{  title, content,  slug } = req.body;
+const createPost = (req, res, next) => {
+    const { title, content, slug } = req.body;
     console.log(title);
-    Post.findOne({title},  (err, data) => {
-        if(data) {
-          return res.status(404).json({
-            message:  'Blog post title already exist, choose another  title'
-          })
-        }else {
-            const  newPost  = new Post({
+    Post.findOne({ title }, (err, data) => {
+        if (data) {
+            return res.status(404).json({
+                message: 'Blog post title already exist, choose another  title'
+            })
+        } else {
+            const newPost = new Post({
                 title,
                 content,
                 slug
@@ -22,7 +22,7 @@ const  createPost = (req, res,  next) => {
             newPost.save((err) => {
                 if (err) {
                     return next(err)
-                }else{
+                } else {
                     return res.status(201).json({
                         message: 'Blog post created successfully'
                     })
@@ -59,7 +59,7 @@ const getParticularPost = (req, res, next) => {
     // return res.status(200).json({ data })
     // }
     // })
-    
+
     Post.findById(req.params.id, (err, data, next) => {
         if (err) next(next);
         else {
@@ -70,11 +70,11 @@ const getParticularPost = (req, res, next) => {
 
 /* ADMIN TO UPDATE POSTS */
 const updatePost = (req, res, next) => {
-    if (!req.admin) {
-    return res.status(401).json({
-        message: "You need to be an admin to edit or delete stories"
+    if (!req.user) {
+        return res.status(401).json({
+            message: "You need to be an admin to do this"
         });
-    }else{
+    } else {
         const id = req.params.id
         const { title, content, slug } = req.body
         Post.findOne({ _id: id }, (err, data) => {
@@ -83,7 +83,7 @@ const updatePost = (req, res, next) => {
                 return res.status(404).json({
                     message: "Post not found"
                 })
-            }else{
+            } else {
                 if (title) {
                     data.title = title;
                 }
@@ -93,12 +93,12 @@ const updatePost = (req, res, next) => {
                 if (slug) {
                     data.slug = slug;
                 }
-                
-                data.save((err, editedPost) => {
+
+                data.save((err, updatedPost) => {
                     if (err) {
                         next(err)
-                    }else{
-                        res.status(200).send(editedPost);
+                    } else {
+                        res.status(200).send(updatedPost);
                     }
                 })
             }
@@ -107,4 +107,22 @@ const updatePost = (req, res, next) => {
 }
 
 
-module.exports = { createPost, getAllPost, getParticularPost, updatePost };
+/** ADMIN TO DELETE POSTS **/
+const deletePost = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({
+            message: "You need to be an admin to do this"
+        });
+    } else {
+        const id = req.params.id
+        Post.findByIdAndDelete(req.params.id, (err) => {
+            if (err) next(err);
+            return res.status(201).json({
+                message: 'Post has been deleted successfully'
+            })
+        })
+    }
+}
+
+
+module.exports = { createPost, getAllPost, getParticularPost, updatePost, deletePost };
